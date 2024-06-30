@@ -1,0 +1,110 @@
+@baseurl=http://localhost:8080
+GET {{baseurl}} HTTP/1.1
+
+###
+
+POST {{baseurl}}/store
+Content-Type: application/json
+X-Correlation-Id: submitting correlation id should be optional
+
+{
+    "Key": "my first key!",
+    "Value": "the very bestest first value",
+    "Headers": {
+        "these": "first value",
+        "values": "2nd value",
+        "should": "moaar",
+        "be": "I can has value?",
+        "optional": "truely"
+    }
+}
+
+###
+
+POST {{baseurl}}/store
+Content-Type: application/json
+
+{
+    "Key": "meny",
+    "Value": "Using crc32 'meny' should collide with 'menthols'"
+}
+
+###
+
+POST {{baseurl}}/store
+Content-Type: application/json
+
+{
+    "Key": "menthols",
+    "Value": "Using crc32 'menthols' should collide with 'meny'"
+}
+
+###
+
+POST {{baseurl}}/retrieve
+Content-Type: application/json
+X-Correlation-Id: nah
+
+{
+    "Key": "my first key!"
+}
+
+###
+
+
+POST {{baseurl}}/retrieve
+Content-Type: application/json
+
+{
+    "Key": "meny"
+}
+
+###
+
+POST {{baseurl}}/retrieve
+Content-Type: application/json
+
+{
+    "Key": "menthols"
+}
+
+###
+
+POST {{baseurl}}/remove
+Content-Type: application/json
+
+{
+    "Key": "my first key!"
+}
+
+###
+
+POST {{baseurl}}/remove
+Content-Type: application/json
+
+{
+    "Key": "meny"
+}
+
+###
+
+POST {{baseurl}}/remove
+Content-Type: application/json
+
+{
+    "Key": "menthols"
+}
+
+###
+
+GET {{baseurl}}/healthz/ready
+
+###
+
+GET {{baseurl}}/healthz/live
+
+###
+
+GET {{baseurl}}/healthz
+
+###
