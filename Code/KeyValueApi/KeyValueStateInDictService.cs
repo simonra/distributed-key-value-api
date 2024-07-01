@@ -118,32 +118,40 @@ public class KeyValueStateInDictService : IKeyValueStateService
         return true;
     }
 
+    public bool SetStartupTimeHightestTopicPartitionOffsets(List<KafkaTopicPartitionOffset> topicPartitionOffsets)
+    {
+        _highestOffsetsAtStartupTime = topicPartitionOffsets;
+        return true;
+    }
+
+    public List<KafkaTopicPartitionOffset> GetStartupTimeHightestTopicPartitionOffsets()
+    {
+        return _highestOffsetsAtStartupTime;
+    }
+
     public bool Ready()
     {
-        _logger.LogTrace($"{nameof(KeyValueStateInDictService)} received request to check readiness");
+        _logger.LogTrace($"{nameof(KeyValueStateInSQLiteService)} received request to check readiness");
         if(_ready) return true;
 
         if(_highestOffsetsAtStartupTime.Count == 0) return false;
 
-        _logger.LogTrace($"{nameof(KeyValueStateInDictService)} readiness check checking topics against highest initial offset");
+        if(_highestOffsetsAtStartupTime.All(tpo => tpo.Offset.Value == 0)) return true;
+
         var latestConsumedOffsets = GetLastConsumedTopicPartitionOffsets();
+
+        if(latestConsumedOffsets.Count == 0) return false; // This case should not happen any more as earliest is set to low watermark before first consume, but leave it in as a safeguard
+
         foreach(var latestOffset in latestConsumedOffsets)
         {
             var partitionHighWatermarkAtStartupTime = _highestOffsetsAtStartupTime.FirstOrDefault(tpo => tpo.Topic == latestOffset.Topic && tpo.Partition == latestOffset.Partition);
             if(latestOffset.Offset.Value < (partitionHighWatermarkAtStartupTime?.Offset.Value ?? long.MaxValue))
             {
-                _logger.LogDebug($"{nameof(KeyValueStateInDictService)} readiness check; Failed because initial value {partitionHighWatermarkAtStartupTime} offset was higher than {latestOffset}");
                 return false;
             }
         }
 
         _ready = true;
         return _ready;
-    }
-
-    public bool SetStartupTimeHightestTopicPartitionOffsets(List<KafkaTopicPartitionOffset> topicPartitionOffsets)
-    {
-        _highestOffsetsAtStartupTime = topicPartitionOffsets;
-        return true;
     }
 }

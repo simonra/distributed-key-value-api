@@ -16,6 +16,7 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
         _sqliteDb.Open();
         InitializeDb();
         _highestOffsetsAtStartupTime = [];
+        _ready = false;
 
         _logger.LogDebug($"{nameof(KeyValueStateInSQLiteService)} initialized");
     }
@@ -185,6 +186,11 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
         // return rowsAffected == topicPartitionOffsets.Count;
     }
 
+    public List<KafkaTopicPartitionOffset> GetStartupTimeHightestTopicPartitionOffsets()
+    {
+        return _highestOffsetsAtStartupTime;
+    }
+
     public bool Ready()
     {
         _logger.LogTrace($"{nameof(KeyValueStateInSQLiteService)} received request to check readiness");
@@ -192,7 +198,12 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
 
         if(_highestOffsetsAtStartupTime.Count == 0) return false;
 
+        if(_highestOffsetsAtStartupTime.All(tpo => tpo.Offset.Value == 0)) return true;
+
         var latestConsumedOffsets = GetLastConsumedTopicPartitionOffsets();
+
+        if(latestConsumedOffsets.Count == 0) return false; // This case should not happen any more as earliest is set to low watermark before first consume, but leave it in as a safeguard
+
         foreach(var latestOffset in latestConsumedOffsets)
         {
             var partitionHighWatermarkAtStartupTime = _highestOffsetsAtStartupTime.FirstOrDefault(tpo => tpo.Topic == latestOffset.Topic && tpo.Partition == latestOffset.Partition);

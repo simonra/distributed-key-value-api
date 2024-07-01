@@ -19,11 +19,11 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ['CMD', '/bin/bash', '-c', 'curl --fail http://localhost/healthz/ready']
+      test: ['CMD', '/bin/bash', '-c', 'curl --fail http://localhost:8080/healthz/ready']
       start_period: "2s"
       interval: "5s"
       timeout: "10s"
-      retries: 10
+      retries: 20
     volumes:
       - ../ContainerData/GeneratedCerts/Kafka/Users/admin:/kafka/secrets
       - ../ContainerData:/ContainerData
@@ -61,10 +61,10 @@ services:
       KV_API_DISABLE_READ: "false"
 
       # Store to in memory dictionary options
-      # KV_API_STATE_STORAGE_TYPE: "dict" #
+      # KV_API_STATE_STORAGE_TYPE: "dict"
 
       # Store to local disk options
-      # KV_API_STATE_STORAGE_TYPE: "disk" #
+      # KV_API_STATE_STORAGE_TYPE: "disk"
       # KV_API_STATE_STORAGE_DISK_LOCATION: "/ContainerData/KeyValueApi/LocalState"
 
       # SQLite settings

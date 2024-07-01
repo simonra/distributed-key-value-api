@@ -7,7 +7,7 @@ public interface IKeyValueStateService
     public List<KafkaTopicPartitionOffset> GetLastConsumedTopicPartitionOffsets();
     public bool UpdateLastConsumedTopicPartitionOffsets(KafkaTopicPartitionOffset topicPartitionOffset);
 
-
     public bool Ready();
+    public List<KafkaTopicPartitionOffset> GetStartupTimeHightestTopicPartitionOffsets();
     public bool SetStartupTimeHightestTopicPartitionOffsets(List<KafkaTopicPartitionOffset> topicPartitionOffsets);
 }

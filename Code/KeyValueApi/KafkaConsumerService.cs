@@ -80,6 +80,10 @@ public class KafkaConsumerService : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = consumer.Consume(stoppingToken);
+
+                // await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken); // Slow down read for playing with readiness checks
+                // _logger.LogInformation("Waited");
+
                 if (result?.Message == null)
                 {
                     _logger.LogDebug("We've reached the end of the topic.");
@@ -158,23 +162,37 @@ public class KafkaConsumerService : BackgroundService
     private async Task SaveStartupTimeLastTopicPartitionOffsets(IConsumer<byte[], byte[]> consumer)
     {
         var partitions = await _kafkaAdminClient.GetTopicPartitions(_topic);
-        List<KafkaTopicPartitionOffset> offsetsAtStartupTime = [];
+        List<KafkaTopicPartitionOffset> highOffsetsAtStartupTime = [];
+        List<KafkaTopicPartitionOffset> lowOffsetsAtStartupTime = [];
         foreach(var partition in partitions)
         {
             var currentOffsets = consumer.QueryWatermarkOffsets(partition, timeout: TimeSpan.FromSeconds(5));
             if(currentOffsets?.High.Value != null)
             {
-                offsetsAtStartupTime.Add(new KafkaTopicPartitionOffset
+                highOffsetsAtStartupTime.Add(new KafkaTopicPartitionOffset
                     {
                         Topic = _topic,
                         Partition = new KafkaPartition { Value = partition.Partition.Value },
-                        Offset = new KafkaOffset { Value = currentOffsets.High.Value - 1 }, // Subtract 1, because received value is "the next that would be written"
+                        Offset = currentOffsets.High.Value == 0 ? new KafkaOffset { Value = 0 } : new KafkaOffset { Value = currentOffsets.High.Value - 1 }, // Subtract 1, because received value is "the next that would be written"
+                    });
+                lowOffsetsAtStartupTime.Add(new KafkaTopicPartitionOffset
+                    {
+                        Topic = _topic,
+                        Partition = new KafkaPartition { Value = partition.Partition.Value },
+                        Offset = new KafkaOffset { Value = currentOffsets.Low.Value }, // Defaults to 0 if none are written
                     });
             }
         }
-        if(!_keyValueStateService.SetStartupTimeHightestTopicPartitionOffsets(offsetsAtStartupTime))
+        if(!_keyValueStateService.SetStartupTimeHightestTopicPartitionOffsets(highOffsetsAtStartupTime))
         {
             _logger.LogError($"Failed to save what topic high watermark offsets are at startup time");
+        }
+        foreach(var partitionOffset in lowOffsetsAtStartupTime)
+        {
+            if(!_keyValueStateService.UpdateLastConsumedTopicPartitionOffsets(partitionOffset))
+            {
+                _logger.LogError($"Failed to set up low watermark offset for partition {partitionOffset.Offset.Value} at startup time");
+            }
         }
     }
 

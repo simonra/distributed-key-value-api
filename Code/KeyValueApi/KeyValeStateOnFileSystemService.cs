@@ -76,7 +76,7 @@ public class KeyValeStateOnFileSystemService : IKeyValueStateService
 
         var nextAvailableBaseName = fileNumbers.Count;
 
-        if(fileNumbers[^1] != fileNumbers.Count - 1)
+        if(0 < fileNumbers.Count && fileNumbers[^1] != fileNumbers.Count - 1)
         {
             // Here there be gaps. Unless there are duplicates. But that is hard to imagine (I don't know any file system allowing for duplicate names). Or someone snuck in a weird value that is parsable as an int. At which point, shrek it, the retrieval will end up finding this anyways.
             for(int i = 0; i < fileNumbers.Count; i++)
@@ -255,12 +255,30 @@ public class KeyValeStateOnFileSystemService : IKeyValueStateService
         return true;
     }
 
+    public bool SetStartupTimeHightestTopicPartitionOffsets(List<KafkaTopicPartitionOffset> topicPartitionOffsets)
+    {
+        _highestOffsetsAtStartupTime = topicPartitionOffsets;
+        return true;
+    }
+
+    public List<KafkaTopicPartitionOffset> GetStartupTimeHightestTopicPartitionOffsets()
+    {
+        return _highestOffsetsAtStartupTime;
+    }
+
     public bool Ready()
     {
+        _logger.LogTrace($"{nameof(KeyValueStateInSQLiteService)} received request to check readiness");
         if(_ready) return true;
+
         if(_highestOffsetsAtStartupTime.Count == 0) return false;
 
+        if(_highestOffsetsAtStartupTime.All(tpo => tpo.Offset.Value == 0)) return true;
+
         var latestConsumedOffsets = GetLastConsumedTopicPartitionOffsets();
+
+        if(latestConsumedOffsets.Count == 0) return false; // This case should not happen any more as earliest is set to low watermark before first consume, but leave it in as a safeguard
+
         foreach(var latestOffset in latestConsumedOffsets)
         {
             var partitionHighWatermarkAtStartupTime = _highestOffsetsAtStartupTime.FirstOrDefault(tpo => tpo.Topic == latestOffset.Topic && tpo.Partition == latestOffset.Partition);
@@ -272,11 +290,6 @@ public class KeyValeStateOnFileSystemService : IKeyValueStateService
 
         _ready = true;
         return _ready;
-    }
-    public bool SetStartupTimeHightestTopicPartitionOffsets(List<KafkaTopicPartitionOffset> topicPartitionOffsets)
-    {
-        _highestOffsetsAtStartupTime = topicPartitionOffsets;
-        return true;
     }
 
     private string GetDirectoryForKey(byte[] key)
