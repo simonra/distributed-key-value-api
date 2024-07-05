@@ -186,11 +186,14 @@ public class KafkaConsumerService : BackgroundService
         {
             _logger.LogError($"Failed to save what topic high watermark offsets are at startup time");
         }
-        foreach(var partitionOffset in lowOffsetsAtStartupTime)
+        if(_keyValueStateService.GetLastConsumedTopicPartitionOffsets().Count == 0)
         {
-            if(!_keyValueStateService.UpdateLastConsumedTopicPartitionOffsets(partitionOffset))
+            foreach(var partitionOffset in lowOffsetsAtStartupTime)
             {
-                _logger.LogError($"Failed to set up low watermark offset for partition {partitionOffset.Offset.Value} at startup time");
+                if(!_keyValueStateService.UpdateLastConsumedTopicPartitionOffsets(partitionOffset))
+                {
+                    _logger.LogError($"Failed to set up low watermark offset for partition {partitionOffset.Offset.Value} at startup time");
+                }
             }
         }
     }
