@@ -40,20 +40,20 @@ public class KafkaConsumerService : BackgroundService
         var schemaRegistryClient = new Confluent.SchemaRegistry.CachedSchemaRegistryClient(schemaRegistryClientConfig);
         _schemaRegistryClient = schemaRegistryClient;
 
-        _logger.LogInformation($"{nameof(KafkaConsumerService)} initialized");
+        _logger.LogDebug($"{nameof(KafkaConsumerService)} initialized");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _ = await _kafkaAdminClient.TryCreateTopics();
-        _logger.LogInformation("Kafka consumer service is doing pre startup blocking work.");
+        _logger.LogDebug("Kafka consumer service is doing pre startup blocking work.");
 
         await DoWork(stoppingToken);
     }
 
     private async Task DoWork(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Kafka consumer service background task started.");
+        _logger.LogDebug("Kafka consumer service background task started.");
 
         var consumer = GetConsumer();
 
@@ -122,7 +122,7 @@ public class KafkaConsumerService : BackgroundService
         finally
         {
             // Close consumer
-            _logger.LogInformation("Disconnecting consumer from Kafka cluster, leaving consumer group and all that");
+            _logger.LogDebug("Disconnecting consumer from Kafka cluster, leaving consumer group and all that");
             consumer.Close();
         }
     }
@@ -150,7 +150,7 @@ public class KafkaConsumerService : BackgroundService
                     _logger.LogInformation($"Topics received form consumer: {System.Text.Json.JsonSerializer.Serialize(partitions)}");
                     _logger.LogInformation($"Topics form state storage: {System.Text.Json.JsonSerializer.Serialize(savedTpos)}");
                 }
-                _logger.LogInformation($"Starting consuming all topics from beginning");
+                _logger.LogDebug($"Starting consuming all topics from beginning");
                 // When starting up, always read the topic from the beginning.
                 var offsets = partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning));
                 return offsets;
@@ -236,7 +236,7 @@ public class KafkaConsumerService : BackgroundService
 
     public override async Task StopAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Kafka consumer received request for graceful shutdown.");
+        _logger.LogDebug("Kafka consumer received request for graceful shutdown.");
 
         await base.StopAsync(stoppingToken);
     }

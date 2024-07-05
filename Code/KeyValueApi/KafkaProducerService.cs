@@ -32,12 +32,12 @@ public class KafkaProducerService
             throw new InvalidOperationException($"Environment variable {nameof(KV_API_KAFKA_KEY_VALUE_TOPIC)} has to have value.");
         }
         _topic = new KafkaTopic { Value = topicName };
-        _logger.LogInformation($"{nameof(KafkaProducerService)} initialized");
+        _logger.LogDebug($"{nameof(KafkaProducerService)} initialized");
     }
 
     public bool Produce(byte[] key, byte[]? value, Dictionary<string, byte[]> headers, CorrelationId correlationId)
     {
-        _logger.LogInformation($"Producing message with correlation ID {correlationId.Value}");
+        _logger.LogTrace($"Producing message with correlation ID {correlationId.Value}");
 
         var message = new Message<byte[], byte[]?>
         {
@@ -71,7 +71,7 @@ public class KafkaProducerService
         // https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/finalizers
         // Could maybe be handled by making this a BackgroundService and using the provided shutdown handling there,
         // but then again this is not really for doing long running background work.
-        _logger.LogInformation("Kafka producer process exit event triggered.");
+        _logger.LogDebug("Kafka producer process exit event triggered.");
         try
         {
             _producer.Flush();
@@ -84,7 +84,7 @@ public class KafkaProducerService
 
     ~KafkaProducerService()
     {
-        _logger.LogInformation("Kafka producer finalizer called.");
+        _logger.LogDebug("Kafka producer finalizer called.");
         try
         {
             _producer.Flush();

@@ -12,7 +12,7 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
     {
         _logger = logger;
         _sqliteDb = new SqliteConnection(GetSqliteConnectionString());
-        _logger.LogInformation($"Connection to db using connection string \"{GetSqliteConnectionString()}\" set up");
+        _logger.LogTrace($"Connection to db using connection string \"{GetSqliteConnectionString()}\" set up");
         _sqliteDb.Open();
         InitializeDb();
         _highestOffsetsAtStartupTime = [];
@@ -224,13 +224,13 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
         {
             if(string.IsNullOrEmpty(configuredLocation))
             {
-                _logger.LogInformation($"Failed to read content of environment variable \"{KV_API_STATE_STORAGE_DISK_LOCATION}\", got null/empty string");
+                _logger.LogDebug($"Failed to read content of environment variable \"{KV_API_STATE_STORAGE_DISK_LOCATION}\", got null/empty string");
             }
             else
             {
                 _logger.LogWarning($"Failed to read proper content of environment variable \"{KV_API_STATE_STORAGE_DISK_LOCATION}\", contained only whitespaces");
             }
-            _logger.LogInformation($"Because {KV_API_STATE_STORAGE_DISK_LOCATION} was not set, setting up in memory sqlite");
+            _logger.LogDebug($"Because {KV_API_STATE_STORAGE_DISK_LOCATION} was not set, setting up in memory sqlite");
             var connectionStringBuilder = new SqliteConnectionStringBuilder
             {
                 DataSource = "KeyValueStateInSQLiteMemDb",
@@ -270,7 +270,7 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
         var configuredPassword = Environment.GetEnvironmentVariable(KV_API_STATE_STORAGE_SQLITE_PASSWORD);
         if(string.IsNullOrWhiteSpace(configuredPassword))
         {
-            _logger.LogInformation($"Env var {KV_API_STATE_STORAGE_SQLITE_PASSWORD} specifying SQLite password has to be set, running without encrypting sqlite database on disk");
+            _logger.LogDebug($"Env var {KV_API_STATE_STORAGE_SQLITE_PASSWORD} specifying SQLite password has to be set, running without encrypting sqlite database on disk");
             return new SqliteConnectionStringBuilder()
             {
                 DataSource = location.FullName,

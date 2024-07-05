@@ -3,7 +3,16 @@ global using static EnvVarNames;
 using System.Net;
 using System.Text;
 
-Console.WriteLine("Starting up");
+using ILoggerFactory factory = LoggerFactory.Create(
+    builder =>
+    {
+        builder.SetMinimumLevel(LogLevel.Information);
+        // builder.SetMinimumLevel(LogLevel.Debug);
+        builder.AddConsole();
+    });
+ILogger logger = factory.CreateLogger("KeyValueApi");
+
+logger.LogInformation("Starting up");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,20 +35,20 @@ if(readEnabled)
     switch (configuredStorageType)
     {
         case "sqlite":
-            Console.WriteLine($"Setting up local state storage to use SQLite");
+            logger.LogInformation($"Setting up local state storage to use SQLite");
             builder.Services.AddSingleton<IKeyValueStateService, KeyValueStateInSQLiteService>();
             break;
         case "disk":
-            Console.WriteLine($"Setting up local state storage to use disk");
+            logger.LogInformation($"Setting up local state storage to use disk");
             builder.Services.AddSingleton<IKeyValueStateService, KeyValeStateOnFileSystemService>();
             break;
         case "dict":
-            Console.WriteLine($"Setting up local state storage to use in memory dict");
+            logger.LogInformation($"Setting up local state storage to use in memory dict");
             builder.Services.AddSingleton<IKeyValueStateService, KeyValueStateInDictService>();
             break;
         default:
-            Console.WriteLine($"Environment variable {KV_API_STATE_STORAGE_TYPE} not set. Valid values are [dict, disk, sqlite]. Setting up default option.");
-            Console.WriteLine($"Setting up local state storage to use SQLite");
+            logger.LogInformation($"Environment variable {KV_API_STATE_STORAGE_TYPE} not set. Valid values are [dict, disk, sqlite]. Setting up default option.");
+            logger.LogInformation($"Setting up local state storage to use SQLite");
             builder.Services.AddSingleton<IKeyValueStateService, KeyValueStateInSQLiteService>();
             break;
     }
@@ -47,7 +56,7 @@ if(readEnabled)
 }
 else
 {
-    Console.WriteLine($"Environment variable {KV_API_DISABLE_READ} set to true, not setting up read services and endpoints");
+    logger.LogInformation($"Environment variable {KV_API_DISABLE_READ} set to true, not setting up read services and endpoints");
 }
 if(writeEnabled)
 {
@@ -55,7 +64,7 @@ if(writeEnabled)
 }
 else
 {
-    Console.WriteLine($"Environment variable {KV_API_DISABLE_WRITE} set to true, not setting up write services and endpoints");
+    logger.LogInformation($"Environment variable {KV_API_DISABLE_WRITE} set to true, not setting up write services and endpoints");
 }
 
 var app = builder.Build();

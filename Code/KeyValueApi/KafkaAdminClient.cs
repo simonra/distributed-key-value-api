@@ -8,7 +8,7 @@ public class KafkaAdminClient
     public KafkaAdminClient(ILogger<KafkaAdminClient> logger)
     {
         _logger = logger;
-        logger.LogInformation($"{nameof(KafkaAdminClient)} initialized");
+        logger.LogDebug($"{nameof(KafkaAdminClient)} initialized");
     }
 
     public async Task<bool> TryCreateTopics()
@@ -32,7 +32,7 @@ public class KafkaAdminClient
             // {
             //     return false;
             // }
-            _logger.LogInformation($"Asking admin client to create topic {topic} in case it doesn't exist");
+            _logger.LogDebug($"Asking admin client to create topic {topic} in case it doesn't exist");
             await adminClient.CreateTopicsAsync(new TopicSpecification[] {
                     new TopicSpecification
                     {
@@ -47,7 +47,7 @@ public class KafkaAdminClient
                          }
                     }
                 });
-            _logger.LogInformation($"Admin client done creating topic {topic}");
+            _logger.LogDebug($"Admin client done trying to create topic {topic}");
             return true;
         }
         catch (Exception e)
@@ -56,7 +56,7 @@ public class KafkaAdminClient
             {
                 // Doing it this way with exception to check is kind of bad, but for a 1-off "check this during startup" it's not really worth it to start the "query cluster for info about everything including all topics" dance.
                 // Still, don't do this at home kids.
-                _logger.LogInformation($"Admin client did not create topic {topic} because it already exists");
+                _logger.LogDebug($"Admin client did not create topic {topic} because it already exists");
                 return false;
             }
             _logger.LogError(e, $"An error occurred creating topic");
