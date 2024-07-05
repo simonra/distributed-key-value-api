@@ -38,13 +38,18 @@ public class KafkaAdminClient
                     {
                          Name = topic,
                          ReplicationFactor = -1,
-                         NumPartitions = 1,
+                         NumPartitions = -1,
                          Configs = new Dictionary<string, string>
                          {
                             { "cleanup.policy", "compact" },
                             { "retention.bytes", "-1" },
                             { "retention.ms", "-1" },
-                         }
+                            { "min-compaction-lag-ms", $"{TimeSpan.FromMinutes(15).TotalMilliseconds}" },
+                            { "max.compaction.lag.ms", $"{TimeSpan.FromHours(1).TotalMilliseconds}" },
+                            { "segment.ms", $"{TimeSpan.FromHours(2).TotalMilliseconds}" },
+                            { "delete.retention.ms", $"{TimeSpan.FromDays(1).TotalMilliseconds}" },
+                            { "min.cleanable.dirty.ratio", "0.90" },
+                        }
                     }
                 });
             _logger.LogDebug($"Admin client done trying to create topic {topic}");
