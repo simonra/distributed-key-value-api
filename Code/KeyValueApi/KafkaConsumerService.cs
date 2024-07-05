@@ -96,7 +96,6 @@ public class KafkaConsumerService : BackgroundService
                     _logger.LogTrace($"The next event on topic {result.TopicPartitionOffset.Topic} partition {result.TopicPartitionOffset.Partition.Value} offset {result.TopicPartitionOffset.Offset.Value} received to the topic at the time {result.Message.Timestamp.UtcDateTime:o} has correlation ID \"{correlationIdFromHeader}\"");
                     if(result.Message.Value == null)
                     {
-                        // ToDo: handle tombstone, delete from dict
                         var key = _decrypt(handleSchemaMagicBytesInKey(result.Message.Key));
                         _keyValueStateService.Remove(key, correlationIdFromHeader);
                     }
