@@ -456,6 +456,35 @@ services:
 
         CreateUserCerts "key-value-api-user"
 
+  create-aes-key:
+    image: localhost/cert-creator:latest
+    user: 1000:1001
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM debian:stable-slim
+
+        RUN apt-get update \
+            && apt-get install -y curl \
+            && apt-get install -y sed \
+            && apt-get install -y openssl \
+            && apt-get install -y coreutils \
+            && apt-get install -y tar
+        # `apt-get install -y base64` is replaced with `apt-get install -y coreutils`
+    container_name: create-aes-key
+    depends_on:
+      set-up-container-mount-area:
+        required: true
+        restart: false
+        condition: service_completed_successfully
+    volumes:
+      - ./ContainerData:/ContainerData
+    entrypoint:
+      - '/bin/bash'
+      - '-c'
+      - |
+        openssl rand -hex 32 > /ContainerData/Kafka/aes_key.txt
+
   broker1:
     image: confluentinc/cp-kafka:7.5.0
     hostname: broker1

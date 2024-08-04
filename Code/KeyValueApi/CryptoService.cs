@@ -18,14 +18,32 @@ public class CryptoService
         // `openssl rand -hex 32`
         // Or for rapid proof of concepting on machine without openssl this js also works:
         // `Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');`
-        var aesKeyHexString = Environment.GetEnvironmentVariable(KV_API_AES_KEY);
+        var aesKeyHexString = string.Empty;
+        var aesKeyLocation = Environment.GetEnvironmentVariable(KV_API_AES_KEY_LOCATION);
+        if(!string.IsNullOrWhiteSpace(aesKeyLocation))
+        {
+            if(File.Exists(aesKeyLocation))
+            {
+                var aesKeyStringFromFile = File.ReadAllLines(aesKeyLocation).First();
+                aesKeyHexString = aesKeyStringFromFile;
+            }
+            else
+            {
+                throw new InvalidOperationException(message: $"Env variable {KV_API_AES_KEY_LOCATION} must be a location of a file containing a line with the hex representation of 256 bits/32 bytes, that is 64 characters long. The supplied value was not the path to an existing file");
+            }
+        }
+        var aesKeyHexFromEnvVar = Environment.GetEnvironmentVariable(KV_API_AES_KEY);
+        if(!string.IsNullOrWhiteSpace(aesKeyHexFromEnvVar))
+        {
+            aesKeyHexString = aesKeyHexFromEnvVar;
+        }
         if(aesKeyHexString?.Length != 64)
         {
-            throw new InvalidOperationException(message: $"Env variable {KV_API_AES_KEY} must be hex representation of 256 bits/32 bytes, that is 64 characters long, the supplied value was not");
+            throw new InvalidOperationException(message: $"AES Key obtained from env variable {KV_API_AES_KEY} or {KV_API_AES_KEY_LOCATION} must be hex representation of 256 bits/32 bytes, that is 64 characters long, the supplied value was not");
         }
         if(!aesKeyHexString.All(c => "0123456789abcdefABCDEF".Contains(c)))
         {
-            throw new InvalidOperationException(message: $"Env variable {KV_API_AES_KEY} must be hex value, the supplied variable contained values that are not legal hex (0-9a-fA-F)");
+            throw new InvalidOperationException(message: $"AES Key obtained from env variable {KV_API_AES_KEY} or {KV_API_AES_KEY_LOCATION} must be hex value, the supplied value contained characters that are not legal hex (0-9a-fA-F)");
         }
         _aesKey = Convert.FromHexString(aesKeyHexString);
     }
