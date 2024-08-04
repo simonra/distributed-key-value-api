@@ -249,7 +249,7 @@ VS Code REST Client: https://marketplace.visualstudio.com/items?itemName=humao.r
 
 ## Steps (docker compose)
 
-1. Start the [docker compose in the top level directory](./docker-compose.yaml),
+1. Start the [docker compose in the top level directory](./docker-compose.yaml)
   besides this readme, to initialize all the required infrastructure components,
   configure them, and spin up their associated supporting tools (KafkaUI) for smoother local development.
 2. After the infrastructure has spun up, start the [docker compose in the `Code/`](./Code/docker-compose.yaml)
