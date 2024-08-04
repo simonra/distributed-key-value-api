@@ -1,3 +1,5 @@
 Multiple api instances in compose
 
 Support reading AES key from file as well as env var, to allow compose to pre-generate shared value for example with multiple instances
+
+Auth?
