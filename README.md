@@ -235,7 +235,11 @@ the topic according to your settings, and also perform the deletion.
 
 ## Prerequisites
 
-Technically, you only need the `dotnet-sdk`, `dotnet-runtime` and `aspnet-runtime` installed ([Windows/directly from Microsoft](https://dotnet.microsoft.com/en-us/download), [arch](https://wiki.archlinux.org/title/.NET), [MacOs](https://formulae.brew.sh/formula/dotnet)), and access to a [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka) cluster somewhere.
+Technically, you only need the `dotnet-sdk`, `dotnet-runtime` and `aspnet-runtime` installed
+([Windows/directly from Microsoft](https://dotnet.microsoft.com/en-us/download),
+[arch](https://wiki.archlinux.org/title/.NET),
+[MacOs](https://formulae.brew.sh/formula/dotnet)),
+and access to a [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka) cluster somewhere.
 
 However, if you just want to run everything locally on your dev machine I strongly recommend just spinning up the docker composes in this repository as described below.
 
@@ -271,6 +275,18 @@ Once everything is up and running here is where you'll find the most interesting
 | Health check: Readiness                           | /healthz/ready         |
 | Health check: Liveliness                          | /healthz/live          |
 | [Kafka UI](https://github.com/provectus/kafka-ui) | http://localhost:8081/ |
+
+### Multiple simultaneous instances in local compose
+
+Instead of starting [the compose with the API in the Code/ directory](./Code/docker-compose.yaml) directly
+by running `docker compose up -d --build` as you usually would, instead start the `multiinstance` profile by running
+
+```sh
+docker compose --profile multiinstance up -d --build
+```
+
+To poke the other instances simply change the port at the top in [`Code/usage.http`](./Code/usage.http)
+to match the instance you want to prod.
 
 # Retracing the creation steps
 
