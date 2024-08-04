@@ -62,6 +62,12 @@ services:
 
         mkdir -p /ProjectDir/ContainerData/Kafka/Brokers/Broker3
         mkdir -p /ProjectDir/ContainerData/Kafka/Brokers/Broker3/Data
+
+        echo "Creating directories for simultaneous instances of KeyValue API"
+        mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance0
+        mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance1
+        mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance2
+        mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance3
         echo '================ Done Creating Output Directory with gitignore ===='
 
   create-certificate-authority:
