@@ -1,3 +1,6 @@
+# Latest aspnet runtime tags: https://mcr.microsoft.com/en-us/product/dotnet/aspnet/tags
+# Latest sdk tags: https://mcr.microsoft.com/en-us/product/dotnet/nightly/sdk/tags
+
 # Build main app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-kv-api
 WORKDIR /App
