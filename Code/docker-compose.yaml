@@ -11,7 +11,7 @@ services:
     image: localhost/key-value-api
     container_name: key-value-api
     build:
-      context: ./KeyValueApi
+      context: .
       dockerfile: Dockerfile
     user: 1000:1001
     networks:
@@ -19,10 +19,11 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ['CMD', '/bin/bash', '-c', 'curl --fail http://localhost:8080/healthz/ready']
-      start_period: "2s"
+      # Can be commented out to use the check embedded in the image. However, due to how compose works, checking for if we are ready is what we want
+      test: [ "CMD", "dotnet", "/HealthChecker/HealthChecker.dll", "--", "http://localhost:8080/healthz/ready" ]
+      start_period: "5s"
       interval: "5s"
-      timeout: "10s"
+      timeout: "1s"
       retries: 20
     volumes:
       - ../ContainerData/GeneratedCerts/Kafka/Users/admin:/kafka/secrets
