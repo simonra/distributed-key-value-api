@@ -19,9 +19,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<KafkaAdminClient>();
@@ -70,11 +67,6 @@ else
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseHttpsRedirection();
 
@@ -107,6 +99,42 @@ if(writeEnabled)
         foreach(var kvp in postContent.Headers ?? [])
         {
             headers.Add(kvp.Key, System.Text.Encoding.UTF8.GetBytes(kvp.Value));
+        }
+        if(!headers.ContainsKey("Correlation-Id")) headers["Correlation-Id"] = System.Text.Encoding.UTF8.GetBytes(correlationId.Value);
+
+        var produceSuccess = kafkaProducerService.Produce(eventKeyBytes, eventValueBytes, headers, correlationId);
+        if(produceSuccess)
+        {
+            return Results.Ok($"Stored");
+        }
+        return Results.Text(
+            content: $"Storage failed",
+            contentType: "text/html",
+            contentEncoding: Encoding.UTF8,
+            statusCode: (int?) HttpStatusCode.InternalServerError);
+    });
+
+    app.MapPost("/store/b64", (HttpContext http, ApiParamStore postContent, KafkaProducerService kafkaProducerService) =>
+    {
+        var correlationIdValue = System.Guid.NewGuid().ToString("D");
+        if(http.Request.Headers.TryGetValue("X-Correlation-Id", out Microsoft.Extensions.Primitives.StringValues value))
+        {
+            if(!string.IsNullOrWhiteSpace(value.ToString()))
+            {
+                correlationIdValue = value.ToString();
+            }
+        }
+        if(postContent.Headers?.ContainsKey("correlationId") ?? false) correlationIdValue = postContent.Headers["correlationId"];
+        var correlationId = new CorrelationId { Value = correlationIdValue };
+        http.Response.Headers.Append("X-Correlation-Id", correlationId.Value);
+
+        var eventKeyBytes = Convert.FromBase64String(postContent.Key);
+        var eventValueBytes = Convert.FromBase64String(postContent.Value);
+
+        Dictionary<string, byte[]> headers = [];
+        foreach(var kvp in postContent.Headers ?? [])
+        {
+            headers.Add(kvp.Key, Convert.FromBase64String(kvp.Value));
         }
         if(!headers.ContainsKey("Correlation-Id")) headers["Correlation-Id"] = System.Text.Encoding.UTF8.GetBytes(correlationId.Value);
 
@@ -178,49 +206,7 @@ if(readEnabled)
         http.Response.Headers.Append("X-Correlation-Id", correlationId.Value);
         return Results.Ok(returnValue);
     });
-}
 
-if(writeEnabled)
-{
-    app.MapPost("/store/b64", (HttpContext http, ApiParamStore postContent, KafkaProducerService kafkaProducerService) =>
-    {
-        var correlationIdValue = System.Guid.NewGuid().ToString("D");
-        if(http.Request.Headers.TryGetValue("X-Correlation-Id", out Microsoft.Extensions.Primitives.StringValues value))
-        {
-            if(!string.IsNullOrWhiteSpace(value.ToString()))
-            {
-                correlationIdValue = value.ToString();
-            }
-        }
-        if(postContent.Headers?.ContainsKey("correlationId") ?? false) correlationIdValue = postContent.Headers["correlationId"];
-        var correlationId = new CorrelationId { Value = correlationIdValue };
-        http.Response.Headers.Append("X-Correlation-Id", correlationId.Value);
-
-        var eventKeyBytes = Convert.FromBase64String(postContent.Key);
-        var eventValueBytes = Convert.FromBase64String(postContent.Value);
-
-        Dictionary<string, byte[]> headers = [];
-        foreach(var kvp in postContent.Headers ?? [])
-        {
-            headers.Add(kvp.Key, Convert.FromBase64String(kvp.Value));
-        }
-        if(!headers.ContainsKey("Correlation-Id")) headers["Correlation-Id"] = System.Text.Encoding.UTF8.GetBytes(correlationId.Value);
-
-        var produceSuccess = kafkaProducerService.Produce(eventKeyBytes, eventValueBytes, headers, correlationId);
-        if(produceSuccess)
-        {
-            return Results.Ok($"Stored");
-        }
-        return Results.Text(
-            content: $"Storage failed",
-            contentType: "text/html",
-            contentEncoding: Encoding.UTF8,
-            statusCode: (int?) HttpStatusCode.InternalServerError);
-    });
-}
-
-if(readEnabled)
-{
     app.MapPost("/retrieve/b64", (HttpContext http, ApiParamRetrieve postContent, IKeyValueStateService keyValueStateService) =>
     {
         var correlationIdValue = System.Guid.NewGuid().ToString("D");
