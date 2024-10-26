@@ -39,8 +39,12 @@ client_id=demo-client
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/store
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 X-Correlation-Id: submitting correlation id should be optional
 
 {
@@ -57,7 +61,11 @@ X-Correlation-Id: submitting correlation id should be optional
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/store
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -67,7 +75,11 @@ Content-Type: application/json
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/store
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -77,8 +89,8 @@ Content-Type: application/json
 
 ###
 
-# @authToken = {{clientTokenRequest.response.body.access_token}}
 @authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
 
 POST {{baseurl}}/retrieve
 Authorization: Bearer {{authToken}}
@@ -91,8 +103,11 @@ X-Correlation-Id: nah
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
 
 POST {{baseurl}}/retrieve
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -101,7 +116,11 @@ Content-Type: application/json
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/retrieve
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -110,7 +129,11 @@ Content-Type: application/json
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/remove
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -119,7 +142,11 @@ Content-Type: application/json
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/remove
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -128,7 +155,11 @@ Content-Type: application/json
 
 ###
 
+@authToken = {{userTokenRequest.response.body.access_token}}
+# @authToken = {{clientTokenRequest.response.body.access_token}}
+
 POST {{baseurl}}/remove
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
