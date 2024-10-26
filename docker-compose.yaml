@@ -1446,9 +1446,10 @@ services:
         sleep 6
         CUSTOM_REALM_NAME=demo-realm
         CUSTOM_CLIENT_NAME=demo-client
+        CUSTOM_CLIENT_SECRET=demo-client-secret
         CUSTOM_ROLE_NAME=demo-role
         DEMO_PASSWORD=password
-        USERS_EMAIL_DOMAIN='hello.stavanger'
+        USERS_EMAIL_DOMAIN='example.com'
 
         function CreateUserInRealm {
           while [ $$# -gt 0 ]; do
@@ -1522,7 +1523,9 @@ services:
         /opt/keycloak/bin/kcadm.sh create clients \
           --target-realm $$CUSTOM_REALM_NAME \
           --set clientId=$$CUSTOM_CLIENT_NAME \
-          --set publicClient="true" \
+          --set secret=$$CUSTOM_CLIENT_SECRET \
+          --set serviceAccountsEnabled=true \
+          --set publicClient="false" \
           --set "redirectUris=[\"*\"]" \
           --set "webOrigins=[\"*\"]" \
           --set directAccessGrantsEnabled=true \
@@ -1539,7 +1542,6 @@ services:
         CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "user" --password $$DEMO_PASSWORD
         CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "admin" --password $$DEMO_PASSWORD
         CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "simon" --password $$DEMO_PASSWORD
-        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "fredrik" --password $$DEMO_PASSWORD
 
         echo "==> Assigning roles to demo users"
 
