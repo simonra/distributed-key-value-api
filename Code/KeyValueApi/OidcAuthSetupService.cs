@@ -10,20 +10,23 @@ public static class OidcAuthSetupService
     {
         appBuilderServices.AddAuthentication().AddJwtBearer("OurBearerScheme", options =>
         {
-            var backendIdpUrl =
-                Environment.GetEnvironmentVariable(
-                    OIDC_IDP_ADDRESS_FOR_SERVER); // "http://keycloak:8088/realms/lokalmaskin"
-            var clientIdpUrl =
-                Environment.GetEnvironmentVariable(
-                    OIDC_IDP_ADDRESS_FOR_USERS); // "http://localhost:8088/realms/lokalmaskin"
-            options.Configuration = new()
-            {
+            var backendIdpUrl = Environment.GetEnvironmentVariable(OIDC_IDP_ADDRESS_FOR_SERVER); // "http://keycloak:8088/realms/lokalmaskin"
+            var clientIdpUrl = Environment.GetEnvironmentVariable(OIDC_IDP_ADDRESS_FOR_USERS); // "http://localhost:8088/realms/lokalmaskin"
+            var authorizationEndpoint = Environment.GetEnvironmentVariable(OIDC_AUTHORIZATION_ENDPOINT)
+                ?? $"{clientIdpUrl}/protocol/openid-connect/auth";
+            var tokenEndpoint = Environment.GetEnvironmentVariable(OIDC_TOKEN_ENDPOINT)
+                ?? $"{backendIdpUrl}/protocol/openid-connect/token";
+            var jwksUri = Environment.GetEnvironmentVariable(OIDC_TOKEN_ENDPOINT)
+                ?? $"{backendIdpUrl}/protocol/openid-connect/certs";
+            var endSessionEndpoint = Environment.GetEnvironmentVariable(OIDC_END_SESSION_ENDPOINT)
+                ?? $"{clientIdpUrl}/protocol/openid-connect/logout";
+            options.Configuration = new(){
                 Issuer = backendIdpUrl,
-                AuthorizationEndpoint = $"{clientIdpUrl}/protocol/openid-connect/auth",
-                TokenEndpoint = $"{backendIdpUrl}/protocol/openid-connect/token",
-                JwksUri = $"{backendIdpUrl}/protocol/openid-connect/certs",
-                JsonWebKeySet = FetchJwks(GetHttpClient(), $"{backendIdpUrl}/protocol/openid-connect/certs"),
-                EndSessionEndpoint = $"{clientIdpUrl}/protocol/openid-connect/logout",
+                AuthorizationEndpoint = authorizationEndpoint,
+                TokenEndpoint = tokenEndpoint,
+                JwksUri = jwksUri,
+                JsonWebKeySet = FetchJwks(GetHttpClient(), jwksUri),
+                EndSessionEndpoint = endSessionEndpoint,
             };
             Console.WriteLine("Jwks: " + options.Configuration.JsonWebKeySet);
             foreach (var key in options.Configuration.JsonWebKeySet.GetSigningKeys())
@@ -40,12 +43,10 @@ public static class OidcAuthSetupService
             options.MapInboundClaims = true;
             options.Audience = Environment.GetEnvironmentVariable(OIDC_AUDIENCE);
         });
-        appBuilderServices.AddAuthorization(options =>
-        {
-            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        appBuilderServices.AddAuthorizationBuilder()
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
-                .Build();
-        });
+                .Build());
         return appBuilderServices;
     }
 
@@ -55,7 +56,7 @@ public static class OidcAuthSetupService
         if (!result.IsSuccessStatusCode || result.Content is null)
         {
             throw new Exception(
-                $"Getting token issuers (Keycloaks) JWKS from {url} failed. Status code {result.StatusCode}");
+                $"Getting JWKS belonging to token issuer from {url} failed. Status code {result.StatusCode}");
         }
 
         var jwks = result.Content.ReadAsStringAsync().Result;

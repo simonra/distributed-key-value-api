@@ -22,7 +22,12 @@ builder.Services.AddControllers();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<KafkaAdminClient>();
-builder.Services.AddOidcAuth();
+
+bool authEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_API_AUTH)?.ToLowerInvariant() != "true";
+if(authEnabled)
+{
+    builder.Services.AddOidcAuth();
+}
 
 bool writeEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_WRITE)?.ToLowerInvariant() != "true";
 bool readEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_READ)?.ToLowerInvariant() != "true";
@@ -71,7 +76,10 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+if(authEnabled)
+{
+    app.UseAuthorization();
+}
 
 app.MapControllers();
 // app.MapGroup(prefix: "").RequireAuthorization();

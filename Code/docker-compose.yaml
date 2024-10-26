@@ -83,6 +83,7 @@ services:
 
       # KV_API_ENCRYPT_DATA_ON_KAFKA: "false"
 
+      # KV_API_DISABLE_API_AUTH: "true"
       OIDC_IDP_ADDRESS_FOR_SERVER: "http://keycloak:8088/realms/demo-realm"
       OIDC_IDP_ADDRESS_FOR_USERS: "http://localhost:8088/realms/demo-realm"
       OIDC_CLIENT_ID: "demo-client"
