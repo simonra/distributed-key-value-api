@@ -90,6 +90,12 @@ services:
       OIDC_REQUIRE_HTTPS_METADATA: "false"
       OIDC_AUDIENCE: "account"
       OIDC_HTTPCLIENT_VALIDATE_EXTERNAL_CERTIFICATES: "false"
+      # Optional overrides
+      # OIDC_AUTHORIZATION_ENDPOINT: "http://localhost:8088/realms/demo-realm/protocol/openid-connect/auth"
+      # OIDC_TOKEN_ENDPOINT: "http://keycloak:8088/realms/demo-realm/protprotocol/openid-connect/token"
+      # OIDC_JWKS_URI: "http://keycloak:8088/realms/demo-realm/protocol/openid-connect/certs"
+      # OIDC_END_SESSION_ENDPOINT: "http://localhost:8088/realms/demo-realm/protocol/openid-connect/logout"
+
 
   key-value-api-second-instance:
     image: localhost/key-value-api

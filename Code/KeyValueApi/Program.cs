@@ -28,6 +28,10 @@ if(authEnabled)
 {
     builder.Services.AddOidcAuth();
 }
+else
+{
+    logger.LogInformation($"Environment variable {KV_API_DISABLE_API_AUTH} set to true, not setting up auth");
+}
 
 bool writeEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_WRITE)?.ToLowerInvariant() != "true";
 bool readEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_READ)?.ToLowerInvariant() != "true";

@@ -1,25 +1,34 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 public static class OidcAuthSetupService
 {
-    // public static WebApplicationBuilder
-    // public static IServiceCollection
     public static IServiceCollection AddOidcAuth(this IServiceCollection appBuilderServices)
     {
         appBuilderServices.AddAuthentication().AddJwtBearer("OurBearerScheme", options =>
         {
             var backendIdpUrl = Environment.GetEnvironmentVariable(OIDC_IDP_ADDRESS_FOR_SERVER); // "http://keycloak:8088/realms/lokalmaskin"
             var clientIdpUrl = Environment.GetEnvironmentVariable(OIDC_IDP_ADDRESS_FOR_USERS); // "http://localhost:8088/realms/lokalmaskin"
-            var authorizationEndpoint = Environment.GetEnvironmentVariable(OIDC_AUTHORIZATION_ENDPOINT)
-                ?? $"{clientIdpUrl}/protocol/openid-connect/auth";
-            var tokenEndpoint = Environment.GetEnvironmentVariable(OIDC_TOKEN_ENDPOINT)
-                ?? $"{backendIdpUrl}/protocol/openid-connect/token";
-            var jwksUri = Environment.GetEnvironmentVariable(OIDC_TOKEN_ENDPOINT)
-                ?? $"{backendIdpUrl}/protocol/openid-connect/certs";
-            var endSessionEndpoint = Environment.GetEnvironmentVariable(OIDC_END_SESSION_ENDPOINT)
-                ?? $"{clientIdpUrl}/protocol/openid-connect/logout";
+            var authorizationEndpoint = Environment.GetEnvironmentVariable(OIDC_AUTHORIZATION_ENDPOINT);
+            if(string.IsNullOrEmpty(authorizationEndpoint))
+            {
+                authorizationEndpoint = $"{clientIdpUrl}/protocol/openid-connect/auth";
+            }
+            var tokenEndpoint = Environment.GetEnvironmentVariable(OIDC_TOKEN_ENDPOINT);
+            if(string.IsNullOrEmpty(tokenEndpoint))
+            {
+                tokenEndpoint = $"{backendIdpUrl}/protocol/openid-connect/token";
+            }
+            var jwksUri = Environment.GetEnvironmentVariable(OIDC_JWKS_URI);
+            if(string.IsNullOrEmpty(jwksUri))
+            {
+                jwksUri = $"{backendIdpUrl}/protocol/openid-connect/certs";
+            }
+            var endSessionEndpoint = Environment.GetEnvironmentVariable(OIDC_END_SESSION_ENDPOINT);
+            if(string.IsNullOrEmpty(endSessionEndpoint))
+            {
+                endSessionEndpoint = $"{clientIdpUrl}/protocol/openid-connect/logout";
+            }
             options.Configuration = new(){
                 Issuer = backendIdpUrl,
                 AuthorizationEndpoint = authorizationEndpoint,
@@ -43,6 +52,8 @@ public static class OidcAuthSetupService
             options.MapInboundClaims = true;
             options.Audience = Environment.GetEnvironmentVariable(OIDC_AUDIENCE);
         });
+        // Require auth by default, have to use `.AllowAnonymous();` if you want e.g. health checks to be anonymous
+        // Use `.AddAuthorization();` if you want the inverse, i.e. only endpoints where you've added `.RequireAuthorization();` to require user is logged in.
         appBuilderServices.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
