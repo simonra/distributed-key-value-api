@@ -193,6 +193,24 @@ A minimal configuration for the connection to Kafka
 | KV_API_AES_KEY_LOCATION | string path to file with AES key on disk containing where first line is 64 hex characters (`0-9a-fA-F`, 256 bits) | If encrypting the data on the topic, you can put the key in a file and point to the file location from here. Only used if the `KV_API_ENCRYPT_DATA_ON_KAFKA` environment variable has been set to `"true"`. Overridden by `KV_API_AES_KEY` if it is set. |
 | KV_API_DISABLE_WRITE | <ul><li>`"true"`</li><li>`"false"`</li><li>not set</li></ul> | If you don't want to enable the possibility to write from this insane (making it a read only instance), you can set this to `"true"`. |
 | KV_API_DISABLE_READ | <ul><li>`"true"`</li><li>`"false"`</li><li>not set</li></ul> | If you don't want to enable the possibility to read from this insane (making it a write only instance), you can set this to `"true"`. |
+| KV_API_DISABLE_API_AUTH | <ul><li>`"true"`</li><li>not set</li></ul> | If set to `"true"` disables auth on the http endpoints. Otherwise defaults to auth being enabled. |
+
+</details>
+
+<details>
+<summary>Auth configuration</summary>
+
+| Config key | Required | Example Value | Comment |
+|------------|----------|---------------|---------|
+| OIDC_IDP_ADDRESS_FOR_SERVER | required | `"http://keycloak:8088/realms/demo-realm"` | The endpoint your server uses to talk to the IDP. Can be different from the endpoint the users use to interact with the IDP, like when you run locally in docker compose. |
+| OIDC_IDP_ADDRESS_FOR_USERS | required | `"http://localhost:8088/realms/demo-realm"` | The endpoint your users uses to authenticate with, and get tokens from, the IDP with. Can be different from the endpoint the server(s) use to interact with the IDP, like when you run locally in docker compose. |
+| OIDC_AUDIENCE | required | `"account"` | Who the token is intended for. Most likely, if the token indicates that it was intended for your local gym or social media conglomerate, that it it doesn't have you/what you expect/set here in the aud(ience) property matching the, you want to reject it. |
+| OIDC_REQUIRE_HTTPS_METADATA | optional | `"false"` | Whether our server should require https metadata when making requests to the IDP. Must be disabled locally unless you want to play the add credentials to the dotnet images' trust store. |
+| OIDC_HTTPCLIENT_VALIDATE_EXTERNAL_CERTIFICATES | optional | `"false"` | Whether our server should validate the IDPs tls certificates. Mostly exists so that you can disable it when running locally so that you don't have to go through the song and dance of making dotnet trust a home made CA. |
+| OIDC_AUTHORIZATION_ENDPOINT | optional | `"http://localhost:8088/realms/demo-realm/protocol/openid-connect/auth"` | Allows you to override the authorization endpoint unauthenticated users can be redirected to in order to obtain a token. |
+| OIDC_TOKEN_ENDPOINT | optional | `"http://keycloak:8088/realms/demo-realm/protprotocol/openid-connect/token"` | Allows you to override the token endpoint the server uses. |
+| OIDC_JWKS_URI | optional | `"http://keycloak:8088/realms/demo-realm/protocol/openid-connect/certs"` | Allows you to override the endpoint which the server uses to obtain the identity providers json web key set keys. |
+| OIDC_END_SESSION_ENDPOINT | optional | `"http://localhost:8088/realms/demo-realm/protocol/openid-connect/logout"` | Allows you to override the endpoint that users wanting to log out/end the session are routed to. |
 
 
 </details>
