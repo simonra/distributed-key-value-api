@@ -270,7 +270,7 @@ public class KeyValueStateInSQLiteService : IKeyValueStateService
         var configuredPassword = Environment.GetEnvironmentVariable(KV_API_STATE_STORAGE_SQLITE_PASSWORD);
         if(string.IsNullOrWhiteSpace(configuredPassword))
         {
-            _logger.LogDebug($"Env var {KV_API_STATE_STORAGE_SQLITE_PASSWORD} specifying SQLite password has to be set, running without encrypting sqlite database on disk");
+            _logger.LogDebug($"If you want to encrypt data stored on disk, then Env var {KV_API_STATE_STORAGE_SQLITE_PASSWORD} specifying SQLite password has to be set, running without encrypting sqlite database on disk");
             return new SqliteConnectionStringBuilder()
             {
                 DataSource = location.FullName,

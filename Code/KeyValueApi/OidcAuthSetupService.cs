@@ -37,11 +37,11 @@ public static class OidcAuthSetupService
                 JsonWebKeySet = FetchJwks(GetHttpClient(), jwksUri),
                 EndSessionEndpoint = endSessionEndpoint,
             };
-            Console.WriteLine("Jwks: " + options.Configuration.JsonWebKeySet);
+            Console.WriteLine($"Public keys posted by trusted OpenIdentityConnect IdentityProvider at \"{jwksUri}\" (formatted as JsonWebKeySet): {System.Text.Json.JsonSerializer.Serialize(options.Configuration.JsonWebKeySet)}");
             foreach (var key in options.Configuration.JsonWebKeySet.GetSigningKeys())
             {
                 options.Configuration.SigningKeys.Add(key);
-                Console.WriteLine("Added SigningKey: " + key.KeyId);
+                Console.WriteLine($"Added SigningKey with KeyID: {key.KeyId}");
             }
 
             options.TokenValidationParameters.ValidIssuers = [clientIdpUrl, backendIdpUrl];
@@ -66,8 +66,7 @@ public static class OidcAuthSetupService
         var result = httpClient.GetAsync(url).Result;
         if (!result.IsSuccessStatusCode || result.Content is null)
         {
-            throw new Exception(
-                $"Getting JWKS belonging to token issuer from {url} failed. Status code {result.StatusCode}");
+            throw new Exception($"Getting JWKS belonging to token issuer from {url} failed. Status code {result.StatusCode}");
         }
 
         var jwks = result.Content.ReadAsStringAsync().Result;
