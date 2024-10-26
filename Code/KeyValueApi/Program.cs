@@ -22,6 +22,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<KafkaAdminClient>();
+builder.Services.AddOidcAuth();
 
 bool writeEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_WRITE)?.ToLowerInvariant() != "true";
 bool readEnabled = Environment.GetEnvironmentVariable(KV_API_DISABLE_READ)?.ToLowerInvariant() != "true";
@@ -73,6 +74,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+// app.MapGroup(prefix: "").RequireAuthorization();
+
 
 if(writeEnabled)
 {
@@ -205,7 +208,9 @@ if(readEnabled)
 
         http.Response.Headers.Append("X-Correlation-Id", correlationId.Value);
         return Results.Ok(returnValue);
-    });
+    })
+    // .RequireAuthorization()
+    ;
 
     app.MapPost("/retrieve/b64", (HttpContext http, ApiParamRetrieve postContent, IKeyValueStateService keyValueStateService) =>
     {
@@ -238,16 +243,16 @@ if(readEnabled)
 // In the future more thorough validation could be done, like checking that the kafka consumer has happily connected, and the state storage is up and running.
 // However, during first time start up when there are no events or data anywhere things become complicated.
 // So, just don't bother with it until a pressing need arises.
-app.MapGet("/healthz", () => Results.Ok("Started successfully"));
-app.MapGet("/healthz/live", () => Results.Ok("Alive and well"));
+app.MapGet("/healthz", () => Results.Ok("Started successfully")).AllowAnonymous();
+app.MapGet("/healthz/live", () => Results.Ok("Alive and well")).AllowAnonymous();
 // /healthz/live
 if(!writeEnabled && !readEnabled)
 {
-    app.MapGet("/healthz/ready", () => Results.Ok("Both reading and writing are disabled? Why even bother"));
+    app.MapGet("/healthz/ready", () => Results.Ok("Both reading and writing are disabled? Why even bother")).AllowAnonymous();
 }
 else if(writeEnabled && !readEnabled)
 {
-    app.MapGet("/healthz/ready", () => Results.Ok("ready"));
+    app.MapGet("/healthz/ready", () => Results.Ok("ready")).AllowAnonymous();
 }
 else
 {
@@ -283,7 +288,8 @@ else
                 contentEncoding: Encoding.UTF8,
                 statusCode: (int?) HttpStatusCode.ServiceUnavailable);
         }
-    });
+    })
+    .AllowAnonymous();
 }
 
 app.Run();

@@ -9,4 +9,10 @@ public static class EnvVarNames
     public const string KV_API_ENCRYPT_DATA_ON_KAFKA = nameof(KV_API_ENCRYPT_DATA_ON_KAFKA);
     public const string KV_API_DISABLE_WRITE = nameof(KV_API_DISABLE_WRITE);
     public const string KV_API_DISABLE_READ = nameof(KV_API_DISABLE_READ);
+
+    public const string OIDC_HTTPCLIENT_VALIDATE_EXTERNAL_CERTIFICATES = nameof(OIDC_HTTPCLIENT_VALIDATE_EXTERNAL_CERTIFICATES);
+    public const string OIDC_IDP_ADDRESS_FOR_SERVER = nameof(OIDC_IDP_ADDRESS_FOR_SERVER);
+    public const string OIDC_IDP_ADDRESS_FOR_USERS = nameof(OIDC_IDP_ADDRESS_FOR_USERS);
+    public const string OIDC_REQUIRE_HTTPS_METADATA = nameof(OIDC_REQUIRE_HTTPS_METADATA);
+    public const string OIDC_AUDIENCE = nameof(OIDC_AUDIENCE);
 }
