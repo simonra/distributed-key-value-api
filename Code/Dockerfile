@@ -21,7 +21,7 @@ COPY HealthChecker/ ./
 RUN dotnet publish --configuration Release --no-self-contained -o out
 
 # Compile final runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled-composite AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled-composite AS final
 WORKDIR /App
 COPY --from=build-kv-api /App/out .
 COPY --from=build-health-checker /App/out /HealthChecker/
