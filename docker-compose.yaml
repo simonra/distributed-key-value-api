@@ -1419,3 +1419,152 @@ services:
       KAFKA_CLUSTERS_0_AUDIT_LEVEL: "all"
     volumes:
       - ./ContainerData/GeneratedCerts/Kafka/Users/kafka-ui:/kafka/secrets
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    user: 1000:1001
+    networks:
+      - apps_network
+    ports:
+      - 8088:8088
+    stop_grace_period: 0s # SIGKILL after 0s during shutdown (no need for grace for this one)
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "password"
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: "INFO"
+      KC_HTTP_PORT: "8088"
+      KC_HTTP_HOST: 0.0.0.0
+    entrypoint:
+      - '/bin/bash'
+      - '-c'
+      - |
+        echo "staring app"
+        /opt/keycloak/bin/kc.sh start-dev &
+        echo "Waiting a bit for startup"
+        sleep 6
+        CUSTOM_REALM_NAME=demo-realm
+        CUSTOM_CLIENT_NAME=demo-client
+        CUSTOM_ROLE_NAME=demo-role
+        DEMO_PASSWORD=password
+        USERS_EMAIL_DOMAIN='hello.stavanger'
+
+        function CreateUserInRealm {
+          while [ $$# -gt 0 ]; do
+            case "$$1" in
+              --realm*|-r*)
+                if [[ "$$1" != *=* ]]; then shift; fi
+                SUPPLIED_REALM="$${1#*=}"
+                ;;
+              --username*|-u*)
+                if [[ "$$1" != *=* ]]; then shift; fi # Value is next arg if no `=`
+                SUPPLIED_USER_NAME="$${1#*=}"
+                ;;
+              --password*|-p*)
+                if [[ "$$1" != *=* ]]; then shift; fi
+                SUPPLIED_USER_PASSWORD="$${1#*=}"
+                ;;
+              *)
+                >&2 printf "Error: Invalid argument\n"
+                exit 1
+                ;;
+            esac
+            shift
+          done
+          echo "==> Creating demo user $${SUPPLIED_USER_NAME} in demo realm $${SUPPLIED_REALM}"
+          /opt/keycloak/bin/kcadm.sh create users \
+            --target-realm $$SUPPLIED_REALM \
+            --set username=$$SUPPLIED_USER_NAME \
+            --set enabled=true \
+            --set emailVerified=true \
+            --set "email=$${SUPPLIED_USER_NAME}@$${USERS_EMAIL_DOMAIN}" \
+            --set "firstName=$${SUPPLIED_USER_NAME}Given" \
+            --set "lastName=$${SUPPLIED_USER_NAME}Family" \
+            --output
+          echo "==> Setting password for demo admin in demo realm"
+          /opt/keycloak/bin/kcadm.sh set-password \
+            --target-realm $$SUPPLIED_REALM \
+            --username $$SUPPLIED_USER_NAME \
+            --new-password $$SUPPLIED_USER_PASSWORD
+        }
+
+        while :
+        do
+          exec 3<>/dev/tcp/127.0.0.1/9000
+          echo -e 'GET /health/ready HTTP/1.1\nhost: http://localhost/auth\nConnection: close\n\n' >&3
+          if [ $? -eq 0 ]
+          then
+            echo '==> KC Ready'
+            break
+          fi
+          echo "==> KC not ready, sleeping a bit and checking again"
+          sleep 2
+        done
+
+        echo "Configuring realms and users"
+        echo "==> Configuring admin connection"
+        /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://localhost:8088 \
+          --realm master \
+          --user $$KC_BOOTSTRAP_ADMIN_USERNAME \
+          --password $$KC_BOOTSTRAP_ADMIN_PASSWORD
+        echo "==> Disabling SSL Required on master realm, because source of noice for local dev use"
+        /opt/keycloak/bin/kcadm.sh update realms/master \
+          --set sslRequired=NONE
+        echo "==> Creating demo realm"
+        /opt/keycloak/bin/kcadm.sh create realms \
+          --set realm=$$CUSTOM_REALM_NAME \
+          --set enabled=true \
+          --set sslRequired=NONE \
+          --output
+        echo "==> Creating demo oauth client registration in demo realm"
+        /opt/keycloak/bin/kcadm.sh create clients \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --set clientId=$$CUSTOM_CLIENT_NAME \
+          --set publicClient="true" \
+          --set "redirectUris=[\"*\"]" \
+          --set "webOrigins=[\"*\"]" \
+          --set directAccessGrantsEnabled=true \
+          --set enabled=true \
+          --output
+        echo "==> Creating demo role in demo realm"
+        /opt/keycloak/bin/kcadm.sh create roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --set name=$$CUSTOM_ROLE_NAME \
+          --output
+
+        echo "==> Creating demo users in demo realm"
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "demo-admin" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "user" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "admin" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "simon" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "fredrik" --password $$DEMO_PASSWORD
+
+        echo "==> Assigning roles to demo users"
+
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "demo-admin" \
+          --rolename $$CUSTOM_ROLE_NAME
+
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "user" \
+          --rolename $$CUSTOM_ROLE_NAME
+
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "admin" \
+          --rolename $$CUSTOM_ROLE_NAME
+
+        echo "Demo setup done"
+        echo "Keeping container alive indefinitely untill it's shut down from the outside"
+        echo "To get user access token run curl --request POST --url http://localhost:8088/realms/demo-realm/protocol/openid-connect/token --header 'Content-Type: application/x-www-form-urlencoded' --data client_id=demo-client --data username=demo-admin --data password=password --data realm=demo-realm --data grant_type=password"
+        sleep infinity
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\nhost: http://localhost/auth\nConnection: close\n\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;"]
+      start_period: "15s"
+      interval: 30s
+      timeout: 10s
+      retries: 3
