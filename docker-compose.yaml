@@ -63,6 +63,9 @@ services:
         mkdir -p /ProjectDir/ContainerData/Kafka/Brokers/Broker3
         mkdir -p /ProjectDir/ContainerData/Kafka/Brokers/Broker3/Data
 
+        echo 'Creating directory for persisting apicurio schema registry state between runs'
+        mkdir -p /ProjectDir/ContainerData/Apicurio
+
         echo "Creating directories for simultaneous instances of KeyValue API"
         mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance0
         mkdir -p /ProjectDir/ContainerData/KeyValueApi/Instance1
@@ -951,24 +954,12 @@ services:
         CreateTopic "key-value-store"
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.3
+    image: apicurio/apicurio-registry:latest-release
     hostname: schema-registry
     container_name: schema-registry
     user: 1000:1001
     depends_on:
-      broker1:
-        required: true
-        restart: false
-        condition: service_healthy
-      broker2:
-        required: true
-        restart: false
-        condition: service_healthy
-      broker3:
-        required: true
-        restart: false
-        condition: service_healthy
-      create-acls:
+      set-up-container-mount-area:
         required: true
         restart: false
         condition: service_completed_successfully
@@ -977,31 +968,22 @@ services:
         ipv4_address: 172.80.80.10
         ipv6_address: 2001:8080:8080::10
     ports:
-      - "8083:8083"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: "schema-registry"
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "broker1:9092,broker2:9092,broker3:9092"
-      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8083"
-
-      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: "SSL"
-
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_TYPE: "PEM"
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: "/kafka/secrets/ca.crt"
-
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_TYPE: "PKCS12"
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: "/kafka/secrets/acl-principal.pfx"
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: "demo_cert_password"
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: "demo_cert_password"
-
-      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: "info"
-    healthcheck:
-      test: nc -z localhost 8083 || exit -1
-      start_period: "5s"
-      interval: "5s"
-      timeout: "2s"
-      retries: 10
+      - "8083:8080"
     volumes:
-      - ./ContainerData/GeneratedCerts/Kafka/Users/schema-registry:/kafka/secrets
+      - ./ContainerData/Apicurio:/container_storage
+    environment:
+      APPLICATION_ID: "example-apicurioregistry"
+      REGISTRY_API_ERRORS_INCLUDE-STACK-IN-RESPONSE: "true"
+      REGISTRY_AUTH_ENABLED: "false"
+      APICURIO_STORAGE_KIND: 'sql'
+      APICURIO_STORAGE_SQL_KIND: 'h2'
+      APICURIO_DATASOURCE_URL: "jdbc:h2:file:/container_storage/apicurio_h2_file_db"
+    healthcheck:
+      test: curl --fail localhost:8080/health/ready
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 1s
 
   create-schemas:
     image: localhost/cert-creator:latest # Re-use same we use for certs
@@ -1027,7 +1009,7 @@ services:
     networks:
       - apps_network
     environment:
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8083"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8080/apis/ccompat/v7"
       SCHEMA_DEFINITION_USER_VALUE: |
         {
           "$$schema": "http://json-schema.org/draft-06/schema",
@@ -1203,7 +1185,7 @@ services:
           echo "  \"schema\": \"$$schema_escaped\","  >> schema.json
           echo "  \"schemaType\":\"$$SCHEMA_TYPE\""   >> schema.json
           echo '}'                                    >> schema.json
-          # Valid schema types at the moment are ["JSON","PROTOBUF","AVRO"] (curl --silent -X GET http://schema-registry:8083/schemas/types)
+          # Valid schema types at the moment are ["JSON","PROTOBUF","AVRO"] (curl --silent -X GET "$$KAFKA_CLUSTERS_0_SCHEMAREGISTRY/schemas/types")
 
           echo "removing newlines in data to post"
           sed -i 's/\n//g' schema.json
@@ -1241,7 +1223,7 @@ services:
       - ./ContainerData/GeneratedCerts/Kafka/Users/demo-producer:/kafka/secrets
     environment:
       BOOTSTRAP_SERVERS: "broker1:9092"
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8083"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8080/apis/ccompat/v7"
       SEPARATOR: "|"
 
       TOPIC_USERS: "Users"
@@ -1364,7 +1346,7 @@ services:
       # - ./ContainerData/GeneratedCerts/Kafka/Users/admin:/kafka/secrets
     environment:
       BOOTSTRAP_SERVERS: "broker1:9092"
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8083"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8080/apis/ccompat/v7"
       _JAVA_OPTIONS: "-Xmx64M -Xms64M"
     entrypoint:
       - '/bin/bash'

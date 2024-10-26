@@ -54,7 +54,7 @@ services:
       KAFKA_AUTO_OFFSET_RESET: "Earliest"
 
       # Schema registry config
-      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8083"
+      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8080/apis/ccompat/v7"
 
       # KvApi config
       KV_API_KAFKA_KEY_VALUE_TOPIC: "key-value-store"
@@ -131,7 +131,7 @@ services:
       KAFKA_AUTO_OFFSET_RESET: "Earliest"
 
       # Schema registry config
-      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8083"
+      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8080/apis/ccompat/v7"
 
       # KvApi config
       KV_API_KAFKA_KEY_VALUE_TOPIC: "key-value-store"
@@ -208,7 +208,7 @@ services:
       KAFKA_AUTO_OFFSET_RESET: "Earliest"
 
       # Schema registry config
-      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8083"
+      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8080/apis/ccompat/v7"
 
       # KvApi config
       KV_API_KAFKA_KEY_VALUE_TOPIC: "key-value-store"
@@ -285,7 +285,7 @@ services:
       KAFKA_AUTO_OFFSET_RESET: "Earliest"
 
       # Schema registry config
-      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8083"
+      KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry:8080/apis/ccompat/v7"
 
       # KvApi config
       KV_API_KAFKA_KEY_VALUE_TOPIC: "key-value-store"
