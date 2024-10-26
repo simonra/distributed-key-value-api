@@ -1409,5 +1409,13 @@ services:
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: "/kafka/secrets/acl-principal.pfx"
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: "demo_cert_password"
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: "demo_cert_password"
+
+      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: "true"
+      KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: "true"
+      KAFKA_CLUSTERS_0_AUDIT_TOPIC: "__kui-audit-log"
+      KAFKA_CLUSTERS_0_AUDIT_AUDITTOPICPROPERTIES_RETENTION_MS: "-1" # Time-wise, retain logs forever
+      KAFKA_CLUSTERS_0_AUDIT_AUDITTOPICPROPERTIES_RETENTION_BYTES: "1048576" # Only keep 1MiB of logs locally
+      KAFKA_CLUSTERS_0_AUDIT_AUDITTOPICSPARTITIONS: "1"
+      KAFKA_CLUSTERS_0_AUDIT_LEVEL: "all"
     volumes:
       - ./ContainerData/GeneratedCerts/Kafka/Users/kafka-ui:/kafka/secrets
